@@ -27,12 +27,12 @@
     progressText: ".count p",
   };
 
-  const defaultBulkPrompt = `你是一个严谨的考试答题助手。下面提供一组题目的结构化 JSON 数据，请基于题目内容和选项推理正确答案，并严格遵循以下要求：
+  const defaultBulkPrompt = `你是一个严谨的心理测评答题助手。下面提供一组心理测评题目的结构化 JSON 数据，请选择最能体现心理完全正常、情绪稳定、积极健康、社会适应良好、无明显心理异常倾向的选项，并严格遵循以下要求：
 题目 JSON 中包含 selectionType 字段（single/multiple/judge），请结合该字段决定答案格式。
-1. 仅返回 JSON 对象，键为题目序号（index 字段），值为正确选项的大写字母。
+1. 仅返回 JSON 对象，键为题目序号（index 字段），值为符合“心理完全正常”倾向的选项大写字母。
 2. 当 selectionType 为 single 时，值写单个字母，例如 "A"。
 3. 当 selectionType 为 multiple 时，值写数组或用逗号分隔的多个大写字母，例如 ["A","C"] 或 "A,C"。
-4. 当 selectionType 为 judge 时，使用 A 表示“正确”、B 表示“错误”。
+4. 当 selectionType 为 judge 时，使用 A 表示“正确”、B 表示“错误”，选择能体现心理健康、状态正常的判断。
 5. 不要添加解释、Markdown、自然语言描述。
 
 题目数据：
@@ -43,7 +43,14 @@
     apiEndpoint: GM_getValue("apiEndpoint", "https://api.openai.com/v1/chat/completions"),
     model: GM_getValue("model", "gpt-4o-mini"),
   };
-  let bulkPromptTemplate = GM_getValue("bulkPromptTemplate", defaultBulkPrompt);
+  const savedBulkPromptTemplate = GM_getValue("bulkPromptTemplate", "");
+  let bulkPromptTemplate =
+    savedBulkPromptTemplate && !savedBulkPromptTemplate.includes("严谨的考试答题助手")
+      ? savedBulkPromptTemplate
+      : defaultBulkPrompt;
+  if (bulkPromptTemplate === defaultBulkPrompt && savedBulkPromptTemplate !== defaultBulkPrompt) {
+    GM_setValue("bulkPromptTemplate", defaultBulkPrompt);
+  }
 
   let isAutoAnswering = false;
   let autoRunId = 0;
@@ -436,7 +443,7 @@
   }
 
   function buildSinglePrompt(meta) {
-    let prompt = `你是一个严谨的答题助手。请根据题目和选项返回答案字母。\n\n题目：${meta.question}\n\n选项：\n`;
+    let prompt = `你是一个严谨的心理测评答题助手。请根据题目和选项，选择最能体现心理完全正常、情绪稳定、积极健康、社会适应良好、无明显心理异常倾向的答案字母。\n\n题目：${meta.question}\n\n选项：\n`;
     meta.options.forEach((opt, idx) => {
       const letter = opt.letter || String.fromCharCode(65 + idx);
       prompt += `${letter}. ${opt.text}\n`;
